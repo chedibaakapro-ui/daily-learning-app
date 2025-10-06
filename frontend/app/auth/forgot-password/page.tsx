@@ -20,8 +20,9 @@ export default function ForgotPasswordPage() {
       const result = await AuthApi.forgotPassword(email);
       setMessage(result.message || 'Password reset email sent. Check your inbox.');
       setEmail('');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to send reset email');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      setError(error.response?.data?.error || 'Failed to send reset email');
     } finally {
       setLoading(false);
     }
@@ -35,7 +36,7 @@ export default function ForgotPasswordPage() {
             Forgot Password
           </h2>
           <p className="text-gray-600 text-sm text-center mb-6">
-            Enter your email and we'll send you a reset link
+            Enter your email and we&apos;ll send you a reset link
           </p>
           
           {error && (

@@ -35,8 +35,9 @@ export default function RegisterPage() {
       const result = await AuthApi.register(email, password);
       setSuccess(result.message);
       setTimeout(() => router.push('/login'), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Registration failed');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      setError(error.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);
     }

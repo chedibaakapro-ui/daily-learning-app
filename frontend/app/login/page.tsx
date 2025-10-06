@@ -20,8 +20,9 @@ export default function LoginPage() {
     try {
       await AuthApi.login(email, password);
       router.push('/topics');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      setError(error.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -90,7 +91,7 @@ export default function LoginPage() {
 
           <div className="mt-4 text-center">
             <Link href="/auth/register" className="text-blue-500 hover:underline text-sm">
-              Don't have an account? Register
+              Don&apos;t have an account? Register
             </Link>
           </div>
         </div>

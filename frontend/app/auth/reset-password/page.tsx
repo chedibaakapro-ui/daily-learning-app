@@ -46,8 +46,9 @@ function ResetPasswordContent() {
       const result = await AuthApi.resetPassword(token, newPassword);
       setSuccess(result.message || 'Password reset successful! Redirecting to login...');
       setTimeout(() => router.push('/login'), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Password reset failed. Token may be expired.');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      setError(error.response?.data?.error || 'Password reset failed. Token may be expired.');
     } finally {
       setLoading(false);
     }

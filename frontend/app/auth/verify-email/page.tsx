@@ -26,9 +26,10 @@ function VerifyEmailContent() {
         setStatus('success');
         setMessage(result.message);
         setTimeout(() => router.push('/login'), 3000);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { error?: string } } };
         setStatus('error');
-        setMessage(err.response?.data?.error || 'Verification failed');
+        setMessage(error.response?.data?.error || 'Verification failed');
       }
     };
 
