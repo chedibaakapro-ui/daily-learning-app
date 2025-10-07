@@ -29,7 +29,13 @@ class AuthService {
       tokenExpiry
     );
 
-    await this.emailService.sendVerificationEmail(email, verificationToken);
+    // Try to send email but don't fail registration if it fails
+    try {
+      await this.emailService.sendVerificationEmail(email, verificationToken);
+    } catch (emailError) {
+      console.error('Failed to send verification email, but user was created:', emailError);
+      // Don't throw - user is already created
+    }
 
     return {
       message: 'Registration successful. Please check your email to verify your account.',
@@ -104,7 +110,13 @@ class AuthService {
     const tokenExpiry = this.emailService.getTokenExpiry();
 
     await this.authRepository.setPasswordResetToken(user.id, resetToken, tokenExpiry);
-    await this.emailService.sendPasswordResetEmail(email, resetToken);
+    
+    // Try to send email but don't fail if it fails
+    try {
+      await this.emailService.sendPasswordResetEmail(email, resetToken);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+    }
 
     return {
       message: 'If an account with that email exists, a password reset link has been sent.',
