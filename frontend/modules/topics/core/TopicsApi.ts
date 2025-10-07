@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { config } from '../../../lib/config';
-
-const API_URL = `${config.apiUrl}/topics`;
+const API_URL = `${config.apiUrl}/api/topics`;
 
 interface TopicData {
   title: string;

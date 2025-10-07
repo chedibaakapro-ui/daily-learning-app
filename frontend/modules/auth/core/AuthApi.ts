@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { config } from '../../../lib/config';
 
-const API_URL = `${config.apiUrl}/auth`;
-
+const API_URL = `${config.apiUrl}/api/auth`;
 class AuthApi {
   static async register(email: string, password: string) {
     const response = await axios.post(`${API_URL}/register`, { email, password });
