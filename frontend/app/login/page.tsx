@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     try {
       await AuthApi.login(email, password);
-      router.push('/topics');
+      router.push('/');  // Changed from '/topics' to '/'
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } };
       setError(error.response?.data?.error || 'Login failed');
