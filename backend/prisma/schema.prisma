@@ -1,12 +1,10 @@
-$newSchema = @'
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -84,9 +82,9 @@ model Topic {
   title           String
   categoryId      String
   
-  contentSimple   String   @db.Text
-  contentMedium   String   @db.Text
-  contentAdvanced String   @db.Text
+  contentSimple   String
+  contentMedium   String
+  contentAdvanced String
   
   estimatedReadTime Int      @default(2)
   isActive          Boolean  @default(true)
@@ -113,7 +111,7 @@ model Question {
   id              String       @id @default(uuid())
   topicId         String
   
-  questionText    String       @db.Text
+  questionText    String
   questionType    QuestionType @default(COMPREHENSION)
   difficulty      Difficulty
   
@@ -122,7 +120,7 @@ model Question {
   optionC         String
   optionD         String
   correctOption   String
-  explanation     String?      @db.Text
+  explanation     String?
   
   displayOrder    Int          @default(0)
   isActive        Boolean      @default(true)
@@ -138,7 +136,7 @@ model Question {
 model DailyTopicSet {
   id               String       @id @default(uuid())
   userId           String
-  date             DateTime     @db.Date
+  date             DateTime
   
   completedCount   Int          @default(0)
   isFullyCompleted Boolean      @default(false)
@@ -253,7 +251,3 @@ model UserAchievement {
   @@index([userId])
   @@index([unlockedAt])
 }
-'@
-
-Set-Content -Path "backend/prisma/schema.prisma" -Value $newSchema -Encoding UTF8
-Write-Host "Schema updated!" -ForegroundColor Green
