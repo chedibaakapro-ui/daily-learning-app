@@ -9,6 +9,13 @@ class EmailService {
     this.sendgridApiKey = process.env.SENDGRID_API_KEY || '';
     this.fromEmail = process.env.FROM_EMAIL || 'chedibaaka.pro@gmail.com';
     this.frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+    // DEBUG: Log configuration (hide most of API key for security)
+    console.log('📧 EmailService Configuration:');
+    console.log('  - SendGrid API Key present:', !!this.sendgridApiKey);
+    console.log('  - SendGrid API Key format:', this.sendgridApiKey ? `${this.sendgridApiKey.substring(0, 10)}...` : 'MISSING');
+    console.log('  - From Email:', this.fromEmail);
+    console.log('  - Frontend URL:', this.frontendUrl);
   }
 
   generateToken(): string {
@@ -22,7 +29,12 @@ class EmailService {
   }
 
   async sendVerificationEmail(email: string, token: string): Promise<void> {
+    console.log('\n🔍 DEBUG: Starting sendVerificationEmail');
+    console.log('  - Target email:', email);
+    console.log('  - Token generated:', token.substring(0, 10) + '...');
+
     const verificationLink = `${this.frontendUrl}/auth/verify-email?token=${token}`;
+    console.log('  - Verification link:', verificationLink);
     
     const emailData = {
       personalizations: [
@@ -58,6 +70,9 @@ class EmailService {
       ],
     };
 
+    console.log('  - Email payload prepared');
+    console.log('  - Attempting to send via SendGrid API...');
+
     try {
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
@@ -68,21 +83,51 @@ class EmailService {
         body: JSON.stringify(emailData),
       });
 
+      console.log('  - SendGrid API response status:', response.status);
+      console.log('  - SendGrid API response statusText:', response.statusText);
+
       if (!response.ok) {
         const error = await response.text();
-        console.error('SendGrid error:', error);
-        throw new Error('Failed to send verification email');
+        console.error('❌ SendGrid API Error Response:', error);
+        console.error('  - Full response status:', response.status);
+        console.error('  - Response headers:', JSON.stringify([...response.headers.entries()]));
+        throw new Error(`Failed to send verification email: ${response.status} ${response.statusText}`);
       }
 
-      console.log('Verification email sent successfully to:', email);
-    } catch (error) {
-      console.error('Error sending verification email:', error);
+      console.log('✅ Verification email sent successfully to:', email);
+    } catch (error: any) {
+      console.error('\n❌ ERROR in sendVerificationEmail:');
+      console.error('  - Error name:', error.name);
+      console.error('  - Error message:', error.message);
+      console.error('  - Error code:', error.code);
+      console.error('  - Error cause:', error.cause);
+      console.error('  - Full error:', error);
+      
+      // Specific handling for SSL errors
+      if (error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || error.cause?.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+        console.error('\n⚠️  SSL CERTIFICATE ERROR DETECTED:');
+        console.error('  This is likely one of these issues:');
+        console.error('  1. Invalid/expired SendGrid API key');
+        console.error('  2. SSL certificate issue in your Node.js environment');
+        console.error('  3. Network/firewall blocking the connection');
+        console.error('  4. SendGrid account not verified or suspended');
+        console.error('\n  RECOMMENDED ACTIONS:');
+        console.error('  - Verify your SendGrid API key is active at https://app.sendgrid.com/settings/api_keys');
+        console.error('  - Check if your SendGrid account is verified');
+        console.error('  - Check your SendGrid sender verification at https://app.sendgrid.com/settings/sender_auth');
+      }
+      
       throw new Error('Failed to send verification email');
     }
   }
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
+    console.log('\n🔍 DEBUG: Starting sendPasswordResetEmail');
+    console.log('  - Target email:', email);
+    console.log('  - Token generated:', token.substring(0, 10) + '...');
+
     const resetLink = `${this.frontendUrl}/auth/reset-password?token=${token}`;
+    console.log('  - Reset link:', resetLink);
     
     const emailData = {
       personalizations: [
@@ -118,6 +163,9 @@ class EmailService {
       ],
     };
 
+    console.log('  - Email payload prepared');
+    console.log('  - Attempting to send via SendGrid API...');
+
     try {
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
@@ -128,15 +176,40 @@ class EmailService {
         body: JSON.stringify(emailData),
       });
 
+      console.log('  - SendGrid API response status:', response.status);
+      console.log('  - SendGrid API response statusText:', response.statusText);
+
       if (!response.ok) {
         const error = await response.text();
-        console.error('SendGrid error:', error);
-        throw new Error('Failed to send password reset email');
+        console.error('❌ SendGrid API Error Response:', error);
+        console.error('  - Full response status:', response.status);
+        console.error('  - Response headers:', JSON.stringify([...response.headers.entries()]));
+        throw new Error(`Failed to send password reset email: ${response.status} ${response.statusText}`);
       }
 
-      console.log('Password reset email sent successfully to:', email);
-    } catch (error) {
-      console.error('Error sending password reset email:', error);
+      console.log('✅ Password reset email sent successfully to:', email);
+    } catch (error: any) {
+      console.error('\n❌ ERROR in sendPasswordResetEmail:');
+      console.error('  - Error name:', error.name);
+      console.error('  - Error message:', error.message);
+      console.error('  - Error code:', error.code);
+      console.error('  - Error cause:', error.cause);
+      console.error('  - Full error:', error);
+      
+      // Specific handling for SSL errors
+      if (error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || error.cause?.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+        console.error('\n⚠️  SSL CERTIFICATE ERROR DETECTED:');
+        console.error('  This is likely one of these issues:');
+        console.error('  1. Invalid/expired SendGrid API key');
+        console.error('  2. SSL certificate issue in your Node.js environment');
+        console.error('  3. Network/firewall blocking the connection');
+        console.error('  4. SendGrid account not verified or suspended');
+        console.error('\n  RECOMMENDED ACTIONS:');
+        console.error('  - Verify your SendGrid API key is active at https://app.sendgrid.com/settings/api_keys');
+        console.error('  - Check if your SendGrid account is verified');
+        console.error('  - Check your SendGrid sender verification at https://app.sendgrid.com/settings/sender_auth');
+      }
+      
       throw new Error('Failed to send password reset email');
     }
   }
