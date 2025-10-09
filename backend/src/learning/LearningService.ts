@@ -1,5 +1,41 @@
 ﻿import LearningRepository from './LearningRepository';
-import { Difficulty } from '@prisma/client';
+import { Difficulty, Topic, UserProgress } from '@prisma/client';
+
+// Define types for included relations
+type TopicWithCategory = Topic & {
+  category: {
+    name: string;
+    icon: string | null;
+  };
+};
+
+type DailyTopicSetWithRelations = {
+  id: string;
+  userId: string;
+  date: Date;
+  completedCount: number;
+  isFullyCompleted: boolean;
+  createdAt: Date;
+  topics: Array<{
+    id: string;
+    displayOrder: number;
+    topic: TopicWithCategory;
+  }>;
+};
+
+type UserProgressWithStatus = UserProgress & {
+  status: string;
+  difficultyChosen: Difficulty | null;
+  markedAsReadAt: Date | null;
+  quizCompleted: boolean;
+};
+
+type UserStats = {
+  currentStreak: number;
+  longestStreak: number;
+  totalTopicsCompleted: number;
+  lastActivityDate: Date | null;
+};
 
 class LearningService {
   private learningRepository: LearningRepository;
@@ -20,12 +56,12 @@ class LearningService {
     let dailySet = await this.learningRepository.getDailyTopicSet(userId, today);
 
     if (dailySet) {
-      return this.formatDailyTopics(dailySet);
+      return this.formatDailyTopics(dailySet as DailyTopicSetWithRelations);
     }
 
     // Generate new daily topics
     dailySet = await this.generateDailyTopics(userId, today);
-    return this.formatDailyTopics(dailySet);
+    return this.formatDailyTopics(dailySet as DailyTopicSetWithRelations);
   }
 
   private async generateDailyTopics(userId: string, date: Date) {
@@ -35,7 +71,7 @@ class LearningService {
     // Get completed topic IDs to avoid repetition
     const completedIds = await this.learningRepository.getCompletedTopicIds(userId);
 
-    let selectedTopics;
+    let selectedTopics: TopicWithCategory[] = [];
 
     if (interests.length > 0) {
       // Get topics from user's interested categories
@@ -47,7 +83,7 @@ class LearningService {
 
       // Filter out completed topics
       const availableTopics = candidateTopics.filter(
-        t => !completedIds.includes(t.id)
+        (t: Topic) => !completedIds.includes(t.id)
       );
 
       // Take 3 topics
@@ -58,8 +94,8 @@ class LearningService {
         const needed = 3 - selectedTopics.length;
         const randomTopics = await this.learningRepository.getRandomTopics(needed + 5);
         const filteredRandom = randomTopics.filter(
-          t => !completedIds.includes(t.id) && 
-               !selectedTopics.some(st => st.id === t.id)
+          (t: Topic) => !completedIds.includes(t.id) && 
+               !selectedTopics.some((st: Topic) => st.id === t.id)
         );
         selectedTopics = [...selectedTopics, ...filteredRandom.slice(0, needed)];
       }
@@ -67,7 +103,7 @@ class LearningService {
       // No interests set, get random topics
       const randomTopics = await this.learningRepository.getRandomTopics(10);
       const availableTopics = randomTopics.filter(
-        t => !completedIds.includes(t.id)
+        (t: Topic) => !completedIds.includes(t.id)
       );
       selectedTopics = availableTopics.slice(0, 3);
     }
@@ -77,12 +113,12 @@ class LearningService {
     return await this.learningRepository.createDailyTopicSet(userId, date, topicIds);
   }
 
-  private formatDailyTopics(dailySet: any) {
+  private formatDailyTopics(dailySet: DailyTopicSetWithRelations) {
     return {
       date: dailySet.date,
       completedCount: dailySet.completedCount,
       isFullyCompleted: dailySet.isFullyCompleted,
-      topics: dailySet.topics.map((dt: any) => ({
+      topics: dailySet.topics.map((dt) => ({
         id: dt.topic.id,
         title: dt.topic.title,
         category: {
@@ -113,8 +149,10 @@ class LearningService {
       progress = await this.learningRepository.createUserProgress(userId, topicId, difficulty);
     }
 
+    const typedProgress = progress as UserProgressWithStatus;
+
     // Select content based on difficulty
-    let content;
+    let content: string;
     switch (difficulty) {
       case Difficulty.SIMPLE:
         content = topic.contentSimple;
@@ -140,9 +178,9 @@ class LearningService {
       },
       estimatedReadTime: topic.estimatedReadTime,
       progress: {
-        status: progress.status,
-        difficultyChosen: progress.difficultyChosen,
-        markedAsReadAt: progress.markedAsReadAt
+        status: typedProgress.status,
+        difficultyChosen: typedProgress.difficultyChosen,
+        markedAsReadAt: typedProgress.markedAsReadAt
       }
     };
   }
@@ -169,11 +207,13 @@ class LearningService {
       throw new Error('You must read the topic first');
     }
 
-    if (!progress.markedAsReadAt) {
+    const typedProgress = progress as UserProgressWithStatus;
+
+    if (!typedProgress.markedAsReadAt) {
       throw new Error('Please mark the topic as read before taking the quiz');
     }
 
-    const difficulty = progress.difficultyChosen || Difficulty.MEDIUM;
+    const difficulty = typedProgress.difficultyChosen || Difficulty.MEDIUM;
     const questions = await this.learningRepository.getQuestionsByTopic(topicId, difficulty);
 
     if (questions.length === 0) {
@@ -204,12 +244,14 @@ class LearningService {
       throw new Error('Progress not found');
     }
 
-    if (progress.quizCompleted) {
+    const typedProgress = progress as UserProgressWithStatus;
+
+    if (typedProgress.quizCompleted) {
       throw new Error('Quiz already completed for this topic');
     }
 
     // Get all questions
-    const difficulty = progress.difficultyChosen || Difficulty.MEDIUM;
+    const difficulty = typedProgress.difficultyChosen || Difficulty.MEDIUM;
     const questions = await this.learningRepository.getQuestionsByTopic(topicId, difficulty);
 
     // Grade the quiz
@@ -272,21 +314,23 @@ class LearningService {
   // ============================================
 
   async getUserProgress(userId: string) {
-    const stats = await this.learningRepository.getUserStats(userId);
+    const stats = await this.learningRepository.getUserStats(userId) as UserStats | null;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dailySet = await this.learningRepository.getDailyTopicSet(userId, today);
+
+    const typedDailySet = dailySet as DailyTopicSetWithRelations | null;
 
     return {
       currentStreak: stats?.currentStreak || 0,
       longestStreak: stats?.longestStreak || 0,
       totalTopicsCompleted: stats?.totalTopicsCompleted || 0,
       lastActivityDate: stats?.lastActivityDate,
-      todayProgress: dailySet ? {
-        completedCount: dailySet.completedCount,
-        totalCount: dailySet.topics.length,
-        isFullyCompleted: dailySet.isFullyCompleted
+      todayProgress: typedDailySet ? {
+        completedCount: typedDailySet.completedCount,
+        totalCount: typedDailySet.topics.length,
+        isFullyCompleted: typedDailySet.isFullyCompleted
       } : null
     };
   }
