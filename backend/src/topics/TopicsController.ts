@@ -15,8 +15,28 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { title, content, category, difficulty } = req.body;
-    const topic = await topicsService.createTopic(title, content, category, difficulty);
+    const {
+      title,
+      categoryId,
+      contentSimple,
+      contentMedium,
+      contentAdvanced,
+      estimatedReadTime,
+    } = req.body;
+
+    if (!title || !categoryId || !contentSimple || !contentMedium || !contentAdvanced) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const topic = await topicsService.createTopic(
+      title,
+      categoryId,
+      contentSimple,
+      contentMedium,
+      contentAdvanced,
+      estimatedReadTime
+    );
+
     res.status(201).json(topic);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

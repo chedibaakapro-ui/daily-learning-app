@@ -11,8 +11,22 @@ class TopicsService {
     return await this.topicsRepository.findAllTopics();
   }
 
-  async createTopic(title: string, content: string, category: string, difficulty: string) {
-    return await this.topicsRepository.createTopic(title, content, category, difficulty);
+  async createTopic(
+    title: string,
+    categoryId: string,
+    contentSimple: string,
+    contentMedium: string,
+    contentAdvanced: string,
+    estimatedReadTime?: number
+  ) {
+    return await this.topicsRepository.createTopic(
+      title,
+      categoryId,
+      contentSimple,
+      contentMedium,
+      contentAdvanced,
+      estimatedReadTime
+    );
   }
 }
 
