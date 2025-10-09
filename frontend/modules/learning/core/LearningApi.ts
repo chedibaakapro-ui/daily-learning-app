@@ -3,13 +3,15 @@ import { config } from '../../../lib/config';
 
 const API_URL = `${config.apiUrl}/api/learning`;
 
-// TODO: Replace with actual JWT token from auth
+// Get auth headers with JWT token
 const getHeaders = () => {
   const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('No authentication token found. Please log in.');
+  }
   return {
     'Content-Type': 'application/json',
-    'x-user-id': 'test-user-id', // Temporary - will use JWT
-    ...(token && { Authorization: `Bearer ${token}` })
+    'Authorization': `Bearer ${token}`
   };
 };
 

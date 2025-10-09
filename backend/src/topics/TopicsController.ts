@@ -1,10 +1,15 @@
-import { Router, Request, Response } from 'express';
+import { Response, Router } from 'express';
+import { authMiddleware, AuthRequest } from '../middleware/authMiddleware';
 import TopicsService from './TopicsService';
 
 const router = Router();
 const topicsService = new TopicsService();
 
-router.get('/', async (req: Request, res: Response) => {
+// Apply auth middleware to all routes
+router.use(authMiddleware);
+
+// Get all topics
+router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const topics = await topicsService.getAllTopics();
     res.json(topics);
@@ -13,19 +18,22 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', async (req: Request, res: Response) => {
+// Create new topic (admin only - for now just authenticated)
+router.post('/', async (req: AuthRequest, res: Response) => {
   try {
-    const {
-      title,
-      categoryId,
-      contentSimple,
-      contentMedium,
-      contentAdvanced,
-      estimatedReadTime,
+    const { 
+      title, 
+      categoryId, 
+      contentSimple, 
+      contentMedium, 
+      contentAdvanced, 
+      estimatedReadTime 
     } = req.body;
-
+    
     if (!title || !categoryId || !contentSimple || !contentMedium || !contentAdvanced) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ 
+        error: 'Missing required fields: title, categoryId, contentSimple, contentMedium, contentAdvanced' 
+      });
     }
 
     const topic = await topicsService.createTopic(
@@ -36,7 +44,7 @@ router.post('/', async (req: Request, res: Response) => {
       contentAdvanced,
       estimatedReadTime
     );
-
+    
     res.status(201).json(topic);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

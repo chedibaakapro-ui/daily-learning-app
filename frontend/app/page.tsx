@@ -1,17 +1,28 @@
 ﻿'use client';
 
-import { useLearning } from '@/modules/learning/core/LearningContainer';
 import DailyTopicsView from '@/modules/learning/components/DailyTopicsView';
-import TopicReader from '@/modules/learning/components/TopicReader';
-import QuizView from '@/modules/learning/components/QuizView';
 import QuizResultView from '@/modules/learning/components/QuizResult';
-import { useState, useEffect, useRef } from 'react';
+import QuizView from '@/modules/learning/components/QuizView';
+import TopicReader from '@/modules/learning/components/TopicReader';
+import { useLearning } from '@/modules/learning/core/LearningContainer';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useAuth } from './providers/AuthProvider';
 
 export default function HomePage() {
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const router = useRouter();
   const learning = useLearning();
   const [darkMode, setDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   useEffect(() => {
     setMounted(true);
@@ -26,13 +37,30 @@ export default function HomePage() {
   };
 
   const getGreeting = () => {
-    if (!mounted) return "Welcome Back";
+    if (!mounted || !user) return "Welcome Back";
     const hour = new Date().getHours();
-    const name = "Champion";
+    const name = user.email.split('@')[0]; // Use email username
     if (hour < 12) return `Good Morning, ${name}`;
     if (hour < 18) return `Good Afternoon, ${name}`;
     return `Good Evening, ${name}`;
   };
+
+  // Show loading while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-bounce">🔐</div>
+          <p className="text-slate-300 text-lg">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   if (learning.loading && learning.dailyTopics.length === 0) {
     return (
@@ -49,7 +77,7 @@ export default function HomePage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
         <div className="text-center">
-          <div className="text-6xl mb-4"></div>
+          <div className="text-6xl mb-4">⚠️</div>
           <p className="text-red-400 text-lg mb-4">{learning.error}</p>
           <button
             onClick={learning.loadDailyTopics}
@@ -97,7 +125,7 @@ export default function HomePage() {
                 fontSize: `${10 + (i % 4) * 3}px`,
               }}
             >
-              
+              ✨
             </div>
           ))}
         </div>
@@ -120,17 +148,31 @@ export default function HomePage() {
                 </span>
               </div>
 
-              {/* Dark Mode Toggle */}
-              <button
-                onClick={toggleDarkMode}
-                className={`px-3 py-2 rounded-xl font-medium text-sm transition-all duration-300 ${
-                  darkMode
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                } shadow-lg`}
-              >
-                <span className="text-base">{darkMode ? '' : ''}</span>
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Dark Mode Toggle */}
+                <button
+                  onClick={toggleDarkMode}
+                  className={`px-3 py-2 rounded-xl font-medium text-sm transition-all duration-300 ${
+                    darkMode
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+                      : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+                  } shadow-lg`}
+                >
+                  <span className="text-base">{darkMode ? '🌙' : '☀️'}</span>
+                </button>
+
+                {/* Logout Button */}
+                <button
+                  onClick={logout}
+                  className={`px-4 py-2 rounded-xl font-medium text-sm transition-all duration-300 ${
+                    darkMode
+                      ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
+                      : 'bg-red-100 text-red-700 hover:bg-red-200'
+                  }`}
+                >
+                  Logout
+                </button>
+              </div>
             </div>
 
             {/* Greeting */}
@@ -157,7 +199,7 @@ export default function HomePage() {
                 <p className={`text-sm font-medium ${
                   darkMode ? 'text-slate-400' : 'text-slate-600'
                 }`}>
-                  Your daily dose of brilliance awaits 
+                  Your daily dose of brilliance awaits ✨
                 </p>
               </div>
             )}
