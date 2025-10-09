@@ -1,7 +1,7 @@
-﻿import LearningRepository from './LearningRepository';
-import { Difficulty, Topic, UserProgress } from '@prisma/client';
+﻿import { Difficulty, Topic, UserProgress } from '@prisma/client';
+import LearningRepository from './LearningRepository';
 
-// Define types for included relations
+// Define types for included relations..
 type TopicWithCategory = Topic & {
   category: {
     name: string;
