@@ -1,4 +1,5 @@
-import { PrismaClient, Difficulty, QuestionType } from '@prisma/client';
+import { Difficulty, PrismaClient, QuestionType } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -6,7 +7,50 @@ async function main() {
   console.log('🌱 Starting seed...');
 
   // ============================================
-  // 1. CREATE CATEGORIES
+  // 0. CLEAN UP EXISTING DATA
+  // ============================================
+  console.log('🧹 Cleaning up existing data...');
+  
+  // Delete in correct order to respect foreign key constraints
+  await prisma.userAchievement.deleteMany({});
+  await prisma.quizAttempt.deleteMany({});
+  await prisma.userProgress.deleteMany({});
+  await prisma.dailyTopic.deleteMany({});
+  await prisma.question.deleteMany({});
+  await prisma.dailyTopicSet.deleteMany({});
+  await prisma.topic.deleteMany({});
+  await prisma.userInterest.deleteMany({});
+  await prisma.user.deleteMany({});
+  await prisma.achievement.deleteMany({});
+  await prisma.category.deleteMany({});
+  
+  console.log('✅ Cleaned up existing data');
+
+  // ============================================
+  // 1. CREATE TEST USER
+  // ============================================
+  console.log('👤 Creating test user...');
+
+  const hashedPassword = await bcrypt.hash('Test123!', 10);
+  
+  const testUser = await prisma.user.create({
+    data: {
+      email: 'test@example.com',
+      password: hashedPassword,
+      isEmailVerified: true,
+      hasCompletedOnboarding: true,
+      defaultDifficulty: Difficulty.MEDIUM,
+      notificationsEnabled: true
+    }
+  });
+
+  console.log('✅ Created test user:');
+  console.log('   Email: test@example.com');
+  console.log('   Password: Test123!');
+  console.log('   User ID:', testUser.id);
+
+  // ============================================
+  // 2. CREATE CATEGORIES
   // ============================================
   console.log('📁 Creating categories...');
 
@@ -93,7 +137,7 @@ async function main() {
   console.log('✅ Created 8 categories');
 
   // ============================================
-  // 2. CREATE TOPICS WITH QUESTIONS
+  // 3. CREATE TOPICS WITH QUESTIONS
   // ============================================
   console.log('📚 Creating topics and questions...');
 
@@ -271,6 +315,9 @@ async function main() {
   console.log('📁 Categories: 8');
   console.log('📚 Topics: 3');
   console.log('❓ Questions: 9');
+  console.log('\n🔑 Test User Credentials:');
+  console.log('   📧 Email: test@example.com');
+  console.log('   🔒 Password: Test123!');
 }
 
 main()

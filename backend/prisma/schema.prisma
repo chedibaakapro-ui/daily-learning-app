@@ -13,29 +13,29 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-  
+
   isEmailVerified              Boolean   @default(false)
   emailVerificationToken       String?   @unique
   emailVerificationTokenExpiry DateTime?
   passwordResetToken           String?   @unique
   passwordResetTokenExpiry     DateTime?
-  
+
   hasCompletedOnboarding Boolean    @default(false)
   preferredLearningTime  String?
   notificationsEnabled   Boolean    @default(true)
   defaultDifficulty      Difficulty @default(MEDIUM)
-  
-  currentStreak          Int      @default(0)
-  longestStreak          Int      @default(0)
-  lastActivityDate       DateTime?
-  totalTopicsCompleted   Int      @default(0)
-  
-  interests              UserInterest[]
-  dailyTopics            DailyTopicSet[]
-  progress               UserProgress[]
-  quizAttempts           QuizAttempt[]
-  achievements           UserAchievement[]
-  
+
+  currentStreak        Int       @default(0)
+  longestStreak        Int       @default(0)
+  lastActivityDate     DateTime?
+  totalTopicsCompleted Int       @default(0)
+
+  interests    UserInterest[]
+  dailyTopics  DailyTopicSet[]
+  progress     UserProgress[]
+  quizAttempts QuizAttempt[]
+  achievements UserAchievement[]
+
   @@index([email])
   @@index([lastActivityDate])
   @@map("User")
@@ -50,10 +50,10 @@ model Category {
   displayOrder Int      @default(0)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
-  
-  users       UserInterest[]
-  topics      Topic[]
-  
+
+  users  UserInterest[]
+  topics Topic[]
+
   @@index([slug])
   @@index([isActive])
 }
@@ -63,10 +63,10 @@ model UserInterest {
   userId     String
   categoryId String
   createdAt  DateTime @default(now())
-  
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   @@unique([userId, categoryId])
   @@index([userId])
 }
@@ -78,24 +78,24 @@ enum Difficulty {
 }
 
 model Topic {
-  id              String   @id @default(uuid())
-  title           String
-  categoryId      String
-  
+  id         String @id @default(uuid())
+  title      String
+  categoryId String
+
   contentSimple   String
   contentMedium   String
   contentAdvanced String
-  
+
   estimatedReadTime Int      @default(2)
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  
-  category                Category       @relation(fields: [categoryId], references: [id])
-  questions               Question[]
-  dailyTopicAssignments   DailyTopic[]
-  userProgress            UserProgress[]
-  
+
+  category              Category       @relation(fields: [categoryId], references: [id])
+  questions             Question[]
+  dailyTopicAssignments DailyTopic[]
+  userProgress          UserProgress[]
+
   @@index([categoryId])
   @@index([isActive])
   @@index([createdAt])
@@ -108,57 +108,57 @@ enum QuestionType {
 }
 
 model Question {
-  id              String       @id @default(uuid())
-  topicId         String
-  
-  questionText    String
-  questionType    QuestionType @default(COMPREHENSION)
-  difficulty      Difficulty
-  
-  optionA         String
-  optionB         String
-  optionC         String
-  optionD         String
-  correctOption   String
-  explanation     String?
-  
-  displayOrder    Int          @default(0)
-  isActive        Boolean      @default(true)
-  createdAt       DateTime     @default(now())
-  
-  topic           Topic        @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  quizAttempts    QuizAttempt[]
-  
+  id      String @id @default(uuid())
+  topicId String
+
+  questionText String
+  questionType QuestionType @default(COMPREHENSION)
+  difficulty   Difficulty
+
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctOption String
+  explanation   String?
+
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  topic        Topic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  quizAttempts QuizAttempt[]
+
   @@index([topicId])
   @@index([difficulty])
 }
 
 model DailyTopicSet {
-  id               String       @id @default(uuid())
-  userId           String
-  date             DateTime
-  
-  completedCount   Int          @default(0)
-  isFullyCompleted Boolean      @default(false)
-  createdAt        DateTime     @default(now())
-  
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topics          DailyTopic[]
-  
+  id     String   @id @default(uuid())
+  userId String
+  date   DateTime
+
+  completedCount   Int      @default(0)
+  isFullyCompleted Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topics DailyTopic[]
+
   @@unique([userId, date])
   @@index([userId])
   @@index([date])
 }
 
 model DailyTopic {
-  id              String         @id @default(uuid())
+  id              String @id @default(uuid())
   dailyTopicSetId String
   topicId         String
   displayOrder    Int
-  
-  dailyTopicSet   DailyTopicSet  @relation(fields: [dailyTopicSetId], references: [id], onDelete: Cascade)
-  topic           Topic          @relation(fields: [topicId], references: [id])
-  
+
+  dailyTopicSet DailyTopicSet @relation(fields: [dailyTopicSetId], references: [id], onDelete: Cascade)
+  topic         Topic         @relation(fields: [topicId], references: [id])
+
   @@unique([dailyTopicSetId, displayOrder])
   @@index([dailyTopicSetId])
 }
@@ -170,25 +170,25 @@ enum ProgressStatus {
 }
 
 model UserProgress {
-  id               String         @id @default(uuid())
-  userId           String
-  topicId          String
-  
+  id      String @id @default(uuid())
+  userId  String
+  topicId String
+
   status           ProgressStatus @default(NOT_STARTED)
   difficultyChosen Difficulty?
   markedAsReadAt   DateTime?
-  
-  quizCompleted    Boolean        @default(false)
-  quizScore        Int?
-  quizAttempts     Int            @default(0)
-  quizCompletedAt  DateTime?
-  
-  startedAt        DateTime       @default(now())
-  completedAt      DateTime?
-  
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topic            Topic          @relation(fields: [topicId], references: [id])
-  
+
+  quizCompleted   Boolean   @default(false)
+  quizScore       Int?
+  quizAttempts    Int       @default(0)
+  quizCompletedAt DateTime?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic Topic @relation(fields: [topicId], references: [id])
+
   @@unique([userId, topicId])
   @@index([userId])
   @@index([status])
@@ -196,19 +196,19 @@ model UserProgress {
 }
 
 model QuizAttempt {
-  id                String    @id @default(uuid())
-  userId            String
-  questionId        String
-  topicId           String
-  
-  selectedOption    String
-  isCorrect         Boolean
-  attemptNumber     Int       @default(1)
-  createdAt         DateTime  @default(now())
-  
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  question          Question  @relation(fields: [questionId], references: [id])
-  
+  id         String @id @default(uuid())
+  userId     String
+  questionId String
+  topicId    String
+
+  selectedOption String
+  isCorrect      Boolean
+  attemptNumber  Int      @default(1)
+  createdAt      DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id])
+
   @@index([userId])
   @@index([questionId])
   @@index([topicId])
@@ -223,30 +223,30 @@ enum AchievementType {
 }
 
 model Achievement {
-  id               String            @id @default(uuid())
-  name             String            @unique
-  description      String
-  type             AchievementType
-  
+  id          String          @id @default(uuid())
+  name        String          @unique
+  description String
+  type        AchievementType
+
   requirementValue Int?
   iconUrl          String?
-  isActive         Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
   userAchievements UserAchievement[]
-  
+
   @@index([type])
 }
 
 model UserAchievement {
-  id             String      @id @default(uuid())
-  userId         String
-  achievementId  String
-  unlockedAt     DateTime    @default(now())
-  
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  achievement    Achievement @relation(fields: [achievementId], references: [id])
-  
+  id            String   @id @default(uuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
   @@unique([userId, achievementId])
   @@index([userId])
   @@index([unlockedAt])
