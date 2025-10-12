@@ -114,20 +114,27 @@ class LearningApi {
     return response.data;
   }
 
-  // Mark topic as read
-  static async markTopicAsRead(topicId: string): Promise<{ message: string }> {
+  // Mark topic as read with difficulty
+  static async markTopicAsRead(
+    topicId: string,
+    difficulty: 'SIMPLE' | 'MEDIUM' | 'ADVANCED'
+  ): Promise<{ message: string }> {
     const response = await axios.post(
       `${API_URL}/topic/${topicId}/mark-read`,
-      {},
+      { difficulty }, // ✅ FIXED: Now sending difficulty!
       { headers: getHeaders() }
     );
     return response.data;
   }
 
-  // Get quiz questions for a topic
-  static async getQuiz(topicId: string): Promise<QuizResponse> {
+  // Get quiz questions for a topic with difficulty
+  static async getQuiz(
+    topicId: string,
+    difficulty: 'SIMPLE' | 'MEDIUM' | 'ADVANCED'
+  ): Promise<QuizResponse> {
     const response = await axios.get(`${API_URL}/quiz/${topicId}`, {
-      headers: getHeaders()
+      headers: getHeaders(),
+      params: { difficulty } // ✅ FIXED: Now sending difficulty!
     });
     return response.data;
   }

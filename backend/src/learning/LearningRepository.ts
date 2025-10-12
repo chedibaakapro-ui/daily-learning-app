@@ -8,7 +8,12 @@ class LearningRepository {
   // ============================================
   
   async getDailyTopicSet(userId: string, date: Date) {
-    return await prisma.dailyTopicSet.findUnique({
+    console.log('[DTR_DEBUG_X7K] [REPO] getDailyTopicSet called');
+    console.log('[DTR_DEBUG_X7K] [REPO] Looking for DailyTopicSet with:');
+    console.log('[DTR_DEBUG_X7K] [REPO]   userId:', userId);
+    console.log('[DTR_DEBUG_X7K] [REPO]   date:', date.toISOString());
+    
+    const result = await prisma.dailyTopicSet.findUnique({
       where: {
         userId_date: {
           userId,
@@ -30,10 +35,26 @@ class LearningRepository {
         }
       }
     });
+    
+    if (result) {
+      console.log('[DTR_DEBUG_X7K] [REPO] ✅ FOUND DailyTopicSet');
+      console.log('[DTR_DEBUG_X7K] [REPO]   ID:', result.id);
+      console.log('[DTR_DEBUG_X7K] [REPO]   Topics count:', result.topics.length);
+    } else {
+      console.log('[DTR_DEBUG_X7K] [REPO] ❌ NO DailyTopicSet found');
+    }
+    
+    return result;
   }
 
   async createDailyTopicSet(userId: string, date: Date, topicIds: string[]) {
-    return await prisma.dailyTopicSet.create({
+    console.log('[DTR_DEBUG_X7K] [REPO] createDailyTopicSet called');
+    console.log('[DTR_DEBUG_X7K] [REPO] Creating DailyTopicSet with:');
+    console.log('[DTR_DEBUG_X7K] [REPO]   userId:', userId);
+    console.log('[DTR_DEBUG_X7K] [REPO]   date:', date.toISOString());
+    console.log('[DTR_DEBUG_X7K] [REPO]   topicIds:', topicIds);
+    
+    const result = await prisma.dailyTopicSet.create({
       data: {
         userId,
         date,
@@ -59,6 +80,10 @@ class LearningRepository {
         }
       }
     });
+    
+    console.log('[DTR_DEBUG_X7K] [REPO] ✅ DailyTopicSet created successfully');
+    
+    return result;
   }
 
   // ============================================
@@ -66,13 +91,22 @@ class LearningRepository {
   // ============================================
 
   async getUserInterests(userId: string) {
-    return await prisma.userInterest.findMany({
+    console.log('[DTR_DEBUG_X7K] [REPO] getUserInterests called for userId:', userId);
+    
+    const result = await prisma.userInterest.findMany({
       where: { userId },
       include: { category: true }
     });
+    
+    console.log('[DTR_DEBUG_X7K] [REPO] Found', result.length, 'interests');
+    return result;
   }
 
   async getRandomTopicsByCategories(categoryIds: string[], limit: number) {
+    console.log('[DTR_DEBUG_X7K] [REPO] getRandomTopicsByCategories called');
+    console.log('[DTR_DEBUG_X7K] [REPO]   categoryIds:', categoryIds);
+    console.log('[DTR_DEBUG_X7K] [REPO]   limit:', limit);
+    
     const topics = await prisma.topic.findMany({
       where: {
         categoryId: { in: categoryIds },
@@ -83,21 +117,35 @@ class LearningRepository {
       }
     });
 
+    console.log('[DTR_DEBUG_X7K] [REPO] Found', topics.length, 'active topics in these categories');
+
     const shuffled = topics.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, limit);
+    const result = shuffled.slice(0, limit);
+    
+    console.log('[DTR_DEBUG_X7K] [REPO] Returning', result.length, 'random topics');
+    return result;
   }
 
   async getRandomTopics(limit: number) {
+    console.log('[DTR_DEBUG_X7K] [REPO] getRandomTopics called with limit:', limit);
+    
     const topics = await prisma.topic.findMany({
       where: { isActive: true },
       include: { category: true }
     });
 
+    console.log('[DTR_DEBUG_X7K] [REPO] Found', topics.length, 'total active topics');
+
     const shuffled = topics.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, limit);
+    const result = shuffled.slice(0, limit);
+    
+    console.log('[DTR_DEBUG_X7K] [REPO] Returning', result.length, 'random topics');
+    return result;
   }
 
   async getCompletedTopicIds(userId: string) {
+    console.log('[DTR_DEBUG_X7K] [REPO] getCompletedTopicIds called for userId:', userId);
+    
     const progress = await prisma.userProgress.findMany({
       where: {
         userId,
@@ -106,7 +154,10 @@ class LearningRepository {
       select: { topicId: true }
     });
 
-    return progress.map(p => p.topicId);
+    const ids = progress.map(p => p.topicId);
+    console.log('[DTR_DEBUG_X7K] [REPO] Found', ids.length, 'completed topics');
+    
+    return ids;
   }
 
   // ============================================
@@ -164,8 +215,29 @@ class LearningRepository {
     });
   }
 
-  async markTopicAsRead(userId: string, topicId: string) {
+  async markTopicAsRead(userId: string, topicId: string, difficulty?: Difficulty) {
     const now = new Date();
+    
+    // ✅ BUILD UPDATE DATA BASED ON WHETHER DIFFICULTY IS PROVIDED
+    const updateData: any = {
+      markedAsReadAt: now,
+      status: ProgressStatus.IN_PROGRESS
+    };
+    
+    if (difficulty) {
+      updateData.difficultyChosen = difficulty; // ✅ UPDATE DIFFICULTY!
+    }
+    
+    const createData: any = {
+      userId,
+      topicId,
+      status: ProgressStatus.IN_PROGRESS,
+      markedAsReadAt: now
+    };
+    
+    if (difficulty) {
+      createData.difficultyChosen = difficulty; // ✅ SET DIFFICULTY ON CREATE!
+    }
     
     return await prisma.userProgress.upsert({
       where: {
@@ -174,16 +246,8 @@ class LearningRepository {
           topicId
         }
       },
-      update: {
-        markedAsReadAt: now,
-        status: ProgressStatus.IN_PROGRESS
-      },
-      create: {
-        userId,
-        topicId,
-        status: ProgressStatus.IN_PROGRESS,
-        markedAsReadAt: now
-      }
+      update: updateData,
+      create: createData
     });
   }
 
@@ -196,6 +260,19 @@ class LearningRepository {
       where: {
         topicId,
         difficulty,
+        isActive: true
+      },
+      orderBy: {
+        displayOrder: 'asc'
+      }
+    });
+  }
+
+  // ✅ NEW METHOD: Get ALL questions regardless of difficulty
+  async getAllQuestionsByTopic(topicId: string) {
+    return await prisma.question.findMany({
+      where: {
+        topicId,
         isActive: true
       },
       orderBy: {

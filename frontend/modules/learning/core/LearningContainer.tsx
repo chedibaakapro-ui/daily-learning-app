@@ -61,7 +61,7 @@ export function useLearning() {
       setState(prev => ({
         ...prev,
         selectedTopic: content,
-        selectedDifficulty: difficulty,
+        selectedDifficulty: difficulty, // ✅ Store the selected difficulty
         viewMode: 'reading',
         loading: false
       }));
@@ -79,10 +79,11 @@ export function useLearning() {
 
     try {
       setState(prev => ({ ...prev, loading: true, error: '' }));
-      await LearningApi.markTopicAsRead(state.selectedTopic.id);
+      // ✅ FIXED: Now passing the difficulty!
+      await LearningApi.markTopicAsRead(state.selectedTopic.id, state.selectedDifficulty);
       
-      // Load quiz
-      const quiz = await LearningApi.getQuiz(state.selectedTopic.id);
+      // Load quiz with the selected difficulty
+      const quiz = await LearningApi.getQuiz(state.selectedTopic.id, state.selectedDifficulty);
       setState(prev => ({
         ...prev,
         quizQuestions: quiz.questions,

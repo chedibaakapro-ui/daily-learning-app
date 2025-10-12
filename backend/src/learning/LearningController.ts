@@ -51,8 +51,9 @@ router.post('/topic/:topicId/mark-read', async (req: AuthRequest, res: Response)
   try {
     const userId = req.userId!;
     const { topicId } = req.params;
+    const { difficulty } = req.body; // ✅ GET DIFFICULTY FROM BODY
 
-    const result = await learningService.markTopicAsRead(userId, topicId);
+    const result = await learningService.markTopicAsRead(userId, topicId, difficulty);
     res.json(result);
   } catch (error: any) {
     console.error('Error marking topic as read:', error);
