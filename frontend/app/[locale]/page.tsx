@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { useTranslations } from 'next-intl';
 import DailyTopicsView from '@/modules/learning/components/DailyTopicsView';
 import QuizResultView from '@/modules/learning/components/QuizResult';
 import QuizView from '@/modules/learning/components/QuizView';
@@ -7,9 +8,11 @@ import TopicReader from '@/modules/learning/components/TopicReader';
 import { useLearning } from '@/modules/learning/core/LearningContainer';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { useAuth } from './providers/AuthProvider';
+import { useAuth } from '../providers/AuthProvider';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function HomePage() {
+  const t = useTranslations();
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const router = useRouter();
   const learning = useLearning();
@@ -37,12 +40,12 @@ export default function HomePage() {
   };
 
   const getGreeting = () => {
-    if (!mounted || !user) return "Welcome Back";
+    if (!mounted || !user) return t('home.welcomeBack');
     const hour = new Date().getHours();
-    const name = user.email.split('@')[0]; // Use email username
-    if (hour < 12) return `Good Morning, ${name}`;
-    if (hour < 18) return `Good Afternoon, ${name}`;
-    return `Good Evening, ${name}`;
+    const name = user.email.split('@')[0];
+    if (hour < 12) return t('home.goodMorning', { name });
+    if (hour < 18) return t('home.goodAfternoon', { name });
+    return t('home.goodEvening', { name });
   };
 
   // Show loading while checking auth
@@ -51,7 +54,7 @@ export default function HomePage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-bounce">🔐</div>
-          <p className="text-slate-300 text-lg">Checking authentication...</p>
+          <p className="text-slate-300 text-lg">{t('auth.checkingAuth')}</p>
         </div>
       </div>
     );
@@ -67,7 +70,7 @@ export default function HomePage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-bounce">📚</div>
-          <p className="text-slate-300 text-lg">Loading your daily topics...</p>
+          <p className="text-slate-300 text-lg">{t('home.loadingTopics')}</p>
         </div>
       </div>
     );
@@ -83,7 +86,7 @@ export default function HomePage() {
             onClick={learning.loadDailyTopics}
             className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:scale-105 transition-all"
           >
-            Try Again
+            {t('common.tryAgain')}
           </button>
         </div>
       </div>
@@ -141,14 +144,17 @@ export default function HomePage() {
                 <div className={`text-xl font-bold bg-gradient-to-r ${
                   darkMode ? 'from-blue-400 to-purple-400' : 'from-blue-700 to-purple-700'
                 } bg-clip-text text-transparent`}>
-                  DL
+                  {t('common.appNameShort')}
                 </div>
                 <span className={`text-sm font-semibold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                  Daily Learning
+                  {t('common.appName')}
                 </span>
               </div>
 
               <div className="flex items-center gap-3">
+                {/* Language Switcher */}
+                <LanguageSwitcher darkMode={darkMode} />
+
                 {/* Dark Mode Toggle */}
                 <button
                   onClick={toggleDarkMode}
@@ -170,7 +176,7 @@ export default function HomePage() {
                       : 'bg-red-100 text-red-700 hover:bg-red-200'
                   }`}
                 >
-                  Logout
+                  {t('common.logout')}
                 </button>
               </div>
             </div>
@@ -184,7 +190,7 @@ export default function HomePage() {
                       ? 'bg-blue-900/30 text-blue-300 border border-blue-800'
                       : 'bg-blue-100 text-blue-800 border border-blue-200'
                   } backdrop-blur-sm`}>
-                    Premium Learning
+                    {t('home.premiumLearning')}
                   </span>
                 </div>
                 <h1 className="text-3xl font-bold mb-3 tracking-tight">
@@ -199,7 +205,7 @@ export default function HomePage() {
                 <p className={`text-sm font-medium ${
                   darkMode ? 'text-slate-400' : 'text-slate-600'
                 }`}>
-                  Your daily dose of brilliance awaits ✨
+                  {t('home.tagline')}
                 </p>
               </div>
             )}
@@ -214,6 +220,7 @@ export default function HomePage() {
                 topics={learning.dailyTopics}
                 completedCount={learning.completedCount}
                 onSelectTopic={learning.selectTopic}
+                onRefreshTopics={learning.refreshTopics}
                 darkMode={darkMode}
               />
             )}

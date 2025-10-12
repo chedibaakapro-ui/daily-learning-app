@@ -1,0 +1,77 @@
+{
+  "common": {
+    "appName": "Daily Learning",
+    "appNameShort": "DL",
+    "loading": "Loading...",
+    "error": "Error",
+    "tryAgain": "Try Again",
+    "back": "Back",
+    "logout": "Logout",
+    "submit": "Submit",
+    "cancel": "Cancel"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "loggingIn": "Logging in...",
+    "noAccount": "Don't have an account? Register",
+    "haveAccount": "Already have an account? Login",
+    "checkingAuth": "Checking authentication..."
+  },
+  "home": {
+    "welcomeBack": "Welcome Back",
+    "goodMorning": "Good Morning, {name}",
+    "goodAfternoon": "Good Afternoon, {name}",
+    "goodEvening": "Good Evening, {name}",
+    "premiumLearning": "Premium Learning",
+    "tagline": "Your daily dose of brilliance awaits ✨",
+    "loadingTopics": "Loading your daily topics...",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode"
+  },
+  "topics": {
+    "todaysProgress": "Today's Progress",
+    "refreshTopics": "Show Me Different Topics",
+    "duration": "Duration",
+    "chooseDifficulty": "Choose difficulty:",
+    "simple": "Simple",
+    "medium": "Medium",
+    "advanced": "Advanced",
+    "minutes": "min",
+    "backToTopics": "Back to Topics",
+    "markAsRead": "Mark as Read & Take Quiz 📝"
+  },
+  "quiz": {
+    "title": "Quiz Time! 🎯",
+    "subtitle": "Answer {count} questions to complete this topic",
+    "question": "Question {number}",
+    "submitQuiz": "Submit Quiz ✅",
+    "answerAll": "Answer All Questions ({current}/{total})"
+  },
+  "results": {
+    "excellentWork": "Excellent Work!",
+    "goodEffort": "Good Effort!",
+    "masteredTopic": "You've mastered this topic! 🎉",
+    "keepLearning": "Keep learning and try again next time",
+    "yourScore": "Your Score",
+    "percentage": "Percentage",
+    "status": "Status",
+    "passed": "✅ Passed",
+    "review": "📝 Review",
+    "continueLearning": "🚀 Continue Learning",
+    "reviewAnswers": "Review Your Answers",
+    "correct": "✅ Correct",
+    "incorrect": "❌ Incorrect",
+    "yourAnswer": "Your answer:",
+    "correctAnswer": "Correct answer:",
+    "explanation": "Explanation:"
+  },
+  "language": {
+    "switchTo": "Switch to",
+    "english": "English",
+    "arabic": "العربية"
+  }
+}

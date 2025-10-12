@@ -54,6 +54,26 @@ export function useLearning() {
     }
   };
 
+  // ✅ Manual refresh topics
+  const refreshTopics = async () => {
+    try {
+      setState(prev => ({ ...prev, loading: true, error: '' }));
+      const data = await LearningApi.refreshDailyTopics();
+      setState(prev => ({
+        ...prev,
+        dailyTopics: data.topics,
+        completedCount: data.completedCount,
+        loading: false
+      }));
+    } catch (err: any) {
+      setState(prev => ({
+        ...prev,
+        error: err.response?.data?.error || 'Failed to refresh topics',
+        loading: false
+      }));
+    }
+  };
+
   const selectTopic = async (topicId: string, difficulty: 'SIMPLE' | 'MEDIUM' | 'ADVANCED') => {
     try {
       setState(prev => ({ ...prev, loading: true, error: '' }));
@@ -61,7 +81,7 @@ export function useLearning() {
       setState(prev => ({
         ...prev,
         selectedTopic: content,
-        selectedDifficulty: difficulty, // ✅ Store the selected difficulty
+        selectedDifficulty: difficulty,
         viewMode: 'reading',
         loading: false
       }));
@@ -79,7 +99,6 @@ export function useLearning() {
 
     try {
       setState(prev => ({ ...prev, loading: true, error: '' }));
-      // ✅ FIXED: Now passing the difficulty!
       await LearningApi.markTopicAsRead(state.selectedTopic.id, state.selectedDifficulty);
       
       // Load quiz with the selected difficulty
@@ -139,6 +158,7 @@ export function useLearning() {
   return {
     ...state,
     loadDailyTopics,
+    refreshTopics,  // ✅ Export refresh function
     selectTopic,
     markAsRead,
     submitQuiz,

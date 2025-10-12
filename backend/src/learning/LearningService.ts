@@ -81,6 +81,31 @@ class LearningService {
     return this.formatDailyTopics(dailySet as DailyTopicSetWithRelations);
   }
 
+  // ============================================
+  // MANUAL TOPIC REFRESH
+  // ============================================
+
+  async refreshDailyTopics(userId: string) {
+    console.log('[MANUAL REFRESH] ========== REFRESH TOPICS START ==========');
+    console.log('[MANUAL REFRESH] User requested new topics');
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Delete existing daily set for today
+    console.log('[MANUAL REFRESH] Deleting current daily set...');
+    await this.learningRepository.deleteDailyTopicSet(userId, today);
+    
+    // Generate new topics
+    console.log('[MANUAL REFRESH] Generating new topics...');
+    const dailySet = await this.generateDailyTopics(userId, today);
+    
+    console.log('[MANUAL REFRESH] ✅ Generated new topics successfully');
+    console.log('[MANUAL REFRESH] ========== REFRESH TOPICS END ==========\n');
+    
+    return this.formatDailyTopics(dailySet as DailyTopicSetWithRelations);
+  }
+
   private async generateDailyTopics(userId: string, date: Date) {
     console.log('[DTR_DEBUG_X7K] --- GENERATE DAILY TOPICS ---');
     
@@ -241,7 +266,6 @@ class LearningService {
   }
 
   async markTopicAsRead(userId: string, topicId: string, difficulty?: Difficulty) {
-    // ✅ PASS DIFFICULTY TO REPOSITORY
     await this.learningRepository.markTopicAsRead(userId, topicId, difficulty);
 
     // Update daily topic set progress
@@ -271,7 +295,7 @@ class LearningService {
 
     const difficulty = typedProgress.difficultyChosen || Difficulty.MEDIUM;
     
-    // ✅ Get ONLY questions matching the chosen difficulty (1 question)
+    // Get ONLY questions matching the chosen difficulty (1 question)
     const questions = await this.learningRepository.getQuestionsByTopic(topicId, difficulty);
 
     if (questions.length === 0) {

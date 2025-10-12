@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { QuizQuestion } from '../core/LearningApi';
 
@@ -10,6 +11,7 @@ interface QuizViewProps {
 }
 
 export default function QuizView({ questions, onSubmit, darkMode = false }: QuizViewProps) {
+  const t = useTranslations();
   const [answers, setAnswers] = useState<{ [questionId: string]: string }>({});
 
   const handleOptionSelect = (questionId: string, option: string) => {
@@ -37,7 +39,6 @@ export default function QuizView({ questions, onSubmit, darkMode = false }: Quiz
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Header */}
       <div className="text-center mb-12">
         <h2 className={`text-3xl font-bold mb-4 ${
           darkMode ? 'text-slate-100' : 'text-slate-900'
@@ -47,17 +48,16 @@ export default function QuizView({ questions, onSubmit, darkMode = false }: Quiz
               ? 'from-blue-300 via-purple-300 to-indigo-300'
               : 'from-blue-700 via-purple-700 to-indigo-700'
           } bg-clip-text text-transparent`}>
-            Quiz Time! 
+            {t('quiz.title')}
           </span>
         </h2>
         <p className={`text-lg font-medium ${
           darkMode ? 'text-slate-400' : 'text-slate-600'
         }`}>
-          Answer {questions.length} questions to complete this topic
+          {t('quiz.subtitle', { count: questions.length })}
         </p>
       </div>
 
-      {/* Questions */}
       <div className="space-y-8">
         {questions.map((question, index) => {
           const selectedAnswer = answers[question.id];
@@ -72,7 +72,6 @@ export default function QuizView({ questions, onSubmit, darkMode = false }: Quiz
               }`}
             >
               <div className="p-8">
-                {/* Question Number */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
                     selectedAnswer
@@ -86,18 +85,16 @@ export default function QuizView({ questions, onSubmit, darkMode = false }: Quiz
                   <h3 className={`text-lg font-bold ${
                     darkMode ? 'text-slate-100' : 'text-slate-900'
                   }`}>
-                    Question {index + 1}
+                    {t('quiz.question', { number: index + 1 })}
                   </h3>
                 </div>
 
-                {/* Question Text */}
                 <p className={`text-lg mb-6 ${
                   darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}>
                   {question.questionText}
                 </p>
 
-                {/* Options */}
                 <div className="space-y-3">
                   {Object.entries(question.options).map(([key, value]) => (
                     <button
@@ -122,7 +119,6 @@ export default function QuizView({ questions, onSubmit, darkMode = false }: Quiz
         })}
       </div>
 
-      {/* Submit Button */}
       <div className="mt-12 text-center">
         <button
           onClick={handleSubmit}
@@ -135,7 +131,7 @@ export default function QuizView({ questions, onSubmit, darkMode = false }: Quiz
               : 'bg-slate-200 text-slate-400 cursor-not-allowed'
           }`}
         >
-          {allAnswered ? 'Submit Quiz ' : `Answer All Questions (${Object.keys(answers).length}/${questions.length})`}
+          {allAnswered ? t('quiz.submitQuiz') : t('quiz.answerAll', { current: Object.keys(answers).length, total: questions.length })}
         </button>
       </div>
     </div>

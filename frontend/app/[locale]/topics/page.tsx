@@ -1,4 +1,4 @@
-import TopicsContainer from '@/modules/topics/core/TopicsContainer'
+import TopicsContainer from '@/modules/topics/core/TopicsContainer';
 
 export default function TopicsPage() {
   return (

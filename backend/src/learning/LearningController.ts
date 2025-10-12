@@ -15,12 +15,28 @@ router.use(authMiddleware);
 // ============================================
 router.get('/daily', async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.userId!; // Guaranteed to exist after authMiddleware
+    const userId = req.userId!;
 
     const dailyTopics = await learningService.getDailyTopics(userId);
     res.json(dailyTopics);
   } catch (error: any) {
     console.error('Error getting daily topics:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// POST /api/learning/daily/refresh
+// Manually refresh daily topics
+// ============================================
+router.post('/daily/refresh', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+
+    const dailyTopics = await learningService.refreshDailyTopics(userId);
+    res.json(dailyTopics);
+  } catch (error: any) {
+    console.error('Error refreshing daily topics:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -51,7 +67,7 @@ router.post('/topic/:topicId/mark-read', async (req: AuthRequest, res: Response)
   try {
     const userId = req.userId!;
     const { topicId } = req.params;
-    const { difficulty } = req.body; // ✅ GET DIFFICULTY FROM BODY
+    const { difficulty } = req.body;
 
     const result = await learningService.markTopicAsRead(userId, topicId, difficulty);
     res.json(result);

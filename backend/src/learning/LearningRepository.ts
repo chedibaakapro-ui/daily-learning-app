@@ -86,6 +86,22 @@ class LearningRepository {
     return result;
   }
 
+  // ✅ NEW METHOD - DELETE DAILY TOPIC SET
+  async deleteDailyTopicSet(userId: string, date: Date) {
+    console.log('[REPO] deleteDailyTopicSet called for manual refresh');
+    console.log('[REPO]   userId:', userId);
+    console.log('[REPO]   date:', date.toISOString());
+    
+    await prisma.dailyTopicSet.deleteMany({
+      where: {
+        userId,
+        date
+      }
+    });
+    
+    console.log('[REPO] ✅ DailyTopicSet deleted successfully');
+  }
+
   // ============================================
   // TOPIC SELECTION
   // ============================================
@@ -218,14 +234,14 @@ class LearningRepository {
   async markTopicAsRead(userId: string, topicId: string, difficulty?: Difficulty) {
     const now = new Date();
     
-    // ✅ BUILD UPDATE DATA BASED ON WHETHER DIFFICULTY IS PROVIDED
+    // Build update data based on whether difficulty is provided
     const updateData: any = {
       markedAsReadAt: now,
       status: ProgressStatus.IN_PROGRESS
     };
     
     if (difficulty) {
-      updateData.difficultyChosen = difficulty; // ✅ UPDATE DIFFICULTY!
+      updateData.difficultyChosen = difficulty;
     }
     
     const createData: any = {
@@ -236,7 +252,7 @@ class LearningRepository {
     };
     
     if (difficulty) {
-      createData.difficultyChosen = difficulty; // ✅ SET DIFFICULTY ON CREATE!
+      createData.difficultyChosen = difficulty;
     }
     
     return await prisma.userProgress.upsert({
@@ -268,7 +284,6 @@ class LearningRepository {
     });
   }
 
-  // ✅ NEW METHOD: Get ALL questions regardless of difficulty
   async getAllQuestionsByTopic(topicId: string) {
     return await prisma.question.findMany({
       where: {

@@ -102,6 +102,14 @@ class LearningApi {
     return response.data;
   }
 
+  // ✅ Manually refresh daily topics
+  static async refreshDailyTopics(): Promise<DailyTopicsResponse> {
+    const response = await axios.post(`${API_URL}/daily/refresh`, {}, {
+      headers: getHeaders()
+    });
+    return response.data;
+  }
+
   // Get topic content with selected difficulty
   static async getTopicContent(
     topicId: string,
@@ -114,27 +122,27 @@ class LearningApi {
     return response.data;
   }
 
-  // Mark topic as read with difficulty
+  // Mark topic as read
   static async markTopicAsRead(
     topicId: string,
     difficulty: 'SIMPLE' | 'MEDIUM' | 'ADVANCED'
   ): Promise<{ message: string }> {
     const response = await axios.post(
       `${API_URL}/topic/${topicId}/mark-read`,
-      { difficulty }, // ✅ FIXED: Now sending difficulty!
+      { difficulty },
       { headers: getHeaders() }
     );
     return response.data;
   }
 
-  // Get quiz questions for a topic with difficulty
+  // Get quiz questions for a topic
   static async getQuiz(
     topicId: string,
     difficulty: 'SIMPLE' | 'MEDIUM' | 'ADVANCED'
   ): Promise<QuizResponse> {
     const response = await axios.get(`${API_URL}/quiz/${topicId}`, {
       headers: getHeaders(),
-      params: { difficulty } // ✅ FIXED: Now sending difficulty!
+      params: { difficulty }
     });
     return response.data;
   }
