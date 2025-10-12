@@ -7,6 +7,17 @@ class AuthRepository {
     });
   }
 
+  async findUserById(id: string) {
+    return await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        isEmailVerified: true,
+      }
+    });
+  }
+
   async findUserByVerificationToken(token: string) {
     return await prisma.user.findUnique({
       where: { emailVerificationToken: token },

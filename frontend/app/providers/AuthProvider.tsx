@@ -1,7 +1,7 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { config } from '../../lib/config';
 
 interface User {
@@ -47,12 +47,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           Authorization: `Bearer ${token}`
         }
       });
-      setUser(response.data.user);
+      
+      if (response.data && response.data.user) {
+        setUser(response.data.user);
+      } else {
+        // Token is invalid, clear it
+        localStorage.removeItem('token');
+        setUser(null);
+      }
     } catch (error) {
-      // If /me fails, try to decode token or just trust it exists
-      console.log('Auth check failed, but token exists');
-      // For now, create a minimal user object
-      setUser({ id: 'temp', email: 'user@example.com' });
+      // Token is invalid or expired, clear it
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('token');
+      setUser(null);
     } finally {
       setIsLoading(false);
     }

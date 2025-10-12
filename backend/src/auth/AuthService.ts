@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import AuthRepository from './AuthRepository';
 import EmailService from '../lib/emailService';
+import AuthRepository from './AuthRepository';
 
 class AuthService {
   private authRepository: AuthRepository;
@@ -140,6 +140,11 @@ class AuthService {
     return {
       message: 'Password reset successful. You can now log in with your new password.',
     };
+  }
+
+  // Add method to get current user
+  async getCurrentUser(userId: string) {
+    return await this.authRepository.findUserById(userId);
   }
 }
 

@@ -1,11 +1,11 @@
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
 import authRoutes from './auth/AuthController';
 import learningRoutes from './learning/LearningController';
 import topicsRoutes from './topics/TopicsController';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());
