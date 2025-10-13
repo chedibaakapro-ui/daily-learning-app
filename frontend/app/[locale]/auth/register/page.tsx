@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AuthApi from '../../../modules/auth/core/AuthApi';
+import AuthApi from '@/modules/auth/core/AuthApi';
 import Link from 'next/link';
 
 export default function RegisterPage() {

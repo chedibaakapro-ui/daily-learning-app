@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import AuthApi from '../../../modules/auth/core/AuthApi';
+import AuthApi from '@/modules/auth/core/AuthApi';
 import Link from 'next/link';
 
 function VerifyEmailContent() {
