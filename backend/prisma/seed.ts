@@ -11,7 +11,6 @@ async function main() {
   // ============================================
   console.log('🧹 Cleaning up existing data...');
   
-  // Delete in correct order to respect foreign key constraints
   await prisma.userAchievement.deleteMany({});
   await prisma.quizAttempt.deleteMany({});
   await prisma.userProgress.deleteMany({});
@@ -27,13 +26,30 @@ async function main() {
   console.log('✅ Cleaned up existing data');
 
   // ============================================
-  // 1. CREATE TEST USER
+  // 1. CREATE TEST USERS
   // ============================================
-  console.log('👤 Creating test user...');
-
-  const hashedPassword = await bcrypt.hash('Test123!', 10);
+  console.log('👤 Creating test users...');
+  const hashedPassword = await bcrypt.hash('Test123!@#', 10);
   
+  // ✅ SHARED TEST ACCOUNT for testing (as required in task)
   const testUser = await prisma.user.create({
+    data: {
+      email: 'test@dailylearn.app',
+      password: hashedPassword,
+      isEmailVerified: true,
+      hasCompletedOnboarding: true,
+      defaultDifficulty: Difficulty.MEDIUM,
+      notificationsEnabled: true
+    }
+  });
+
+  console.log('✅ Created shared test account:');
+  console.log('   📧 Email: test@dailylearn.app');
+  console.log('   🔒 Password: Test123!@#');
+  console.log('   🆔 User ID:', testUser.id);
+
+  // Also create the old test account for backward compatibility
+  await prisma.user.create({
     data: {
       email: 'test@example.com',
       password: hashedPassword,
@@ -44,16 +60,13 @@ async function main() {
     }
   });
 
-  console.log('✅ Created test user:');
-  console.log('   Email: test@example.com');
-  console.log('   Password: Test123!');
-  console.log('   User ID:', testUser.id);
+  console.log('✅ Created legacy test account: test@example.com');
 
   // ============================================
   // 2. CREATE CATEGORIES
   // ============================================
   console.log('📁 Creating categories...');
-
+  
   const physics = await prisma.category.create({
     data: {
       name: 'Physics',
@@ -312,12 +325,14 @@ async function main() {
   console.log('✅ Created 3 topics with 9 questions');
 
   console.log('\n🎉 Seed completed successfully!');
+  console.log('═══════════════════════════════════════');
   console.log('📁 Categories: 8');
   console.log('📚 Topics: 3');
   console.log('❓ Questions: 9');
-  console.log('\n🔑 Test User Credentials:');
-  console.log('   📧 Email: test@example.com');
-  console.log('   🔒 Password: Test123!');
+  console.log('\n🔑 Test Account Credentials:');
+  console.log('   📧 Email: test@dailylearn.app');
+  console.log('   🔒 Password: Test123!@#');
+  console.log('═══════════════════════════════════════\n');
 }
 
 main()

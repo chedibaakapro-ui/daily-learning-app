@@ -1,7 +1,6 @@
 ﻿import { Difficulty, Topic, UserProgress } from '@prisma/client';
 import LearningRepository from './LearningRepository';
 
-// Define types for included relations
 type TopicWithCategory = Topic & {
   category: {
     name: string;
@@ -45,38 +44,33 @@ class LearningService {
   }
 
   // ============================================
-  // DAILY TOPICS GENERATION
+  // DAILY TOPICS GENERATION - ALWAYS 3 CARDS
   // ============================================
-
   async getDailyTopics(userId: string) {
-    console.log('[DTR_DEBUG_X7K] ========== GET DAILY TOPICS START ==========');
-    console.log('[DTR_DEBUG_X7K] UserId:', userId);
+    console.log('[DAILY_TOPICS] ========== GET DAILY TOPICS START ==========');
+    console.log('[DAILY_TOPICS] UserId:', userId);
     
     const today = new Date();
-    console.log('[DTR_DEBUG_X7K] Server Date (BEFORE normalization):', today.toISOString());
-    
     today.setHours(0, 0, 0, 0);
-    console.log('[DTR_DEBUG_X7K] Normalized Today Date:', today.toISOString());
+    console.log('[DAILY_TOPICS] Today:', today.toISOString());
 
-    // Check if daily topics already exist for today
-    console.log('[DTR_DEBUG_X7K] Checking if DailyTopicSet exists for today...');
     let dailySet = await this.learningRepository.getDailyTopicSet(userId, today);
 
     if (dailySet) {
-      console.log('[DTR_DEBUG_X7K] ✅ FOUND EXISTING DailyTopicSet');
-      console.log('[DTR_DEBUG_X7K] Returning', dailySet.topics.length, 'topics');
-      console.log('[DTR_DEBUG_X7K] ========== RETURNING EXISTING SET ==========\n');
+      console.log('[DAILY_TOPICS] ✅ Found existing set with', dailySet.topics.length, 'topics');
+      
+      // ✅ CRITICAL FIX: Verify we have exactly 3 topics
+      if (dailySet.topics.length !== 3) {
+        console.log('[DAILY_TOPICS] ⚠️ Set has', dailySet.topics.length, 'topics (need 3). Regenerating...');
+        await this.learningRepository.deleteDailyTopicSet(userId, today);
+        dailySet = await this.generateDailyTopics(userId, today);
+      }
+      
       return this.formatDailyTopics(dailySet as DailyTopicSetWithRelations);
     }
 
-    console.log('[DTR_DEBUG_X7K] ❌ NO EXISTING DailyTopicSet found');
-    console.log('[DTR_DEBUG_X7K] Generating NEW daily topics...');
-    
-    // Generate new daily topics
+    console.log('[DAILY_TOPICS] No existing set. Generating new topics...');
     dailySet = await this.generateDailyTopics(userId, today);
-    
-    console.log('[DTR_DEBUG_X7K] ✅ NEW DailyTopicSet created with', dailySet.topics.length, 'topics');
-    console.log('[DTR_DEBUG_X7K] ========== RETURNING NEW SET ==========\n');
     
     return this.formatDailyTopics(dailySet as DailyTopicSetWithRelations);
   }
@@ -84,113 +78,92 @@ class LearningService {
   // ============================================
   // MANUAL TOPIC REFRESH
   // ============================================
-
   async refreshDailyTopics(userId: string) {
-    console.log('[MANUAL REFRESH] ========== REFRESH TOPICS START ==========');
-    console.log('[MANUAL REFRESH] User requested new topics');
+    console.log('[REFRESH] Manual refresh requested');
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Delete existing daily set for today
-    console.log('[MANUAL REFRESH] Deleting current daily set...');
     await this.learningRepository.deleteDailyTopicSet(userId, today);
-    
-    // Generate new topics
-    console.log('[MANUAL REFRESH] Generating new topics...');
     const dailySet = await this.generateDailyTopics(userId, today);
-    
-    console.log('[MANUAL REFRESH] ✅ Generated new topics successfully');
-    console.log('[MANUAL REFRESH] ========== REFRESH TOPICS END ==========\n');
     
     return this.formatDailyTopics(dailySet as DailyTopicSetWithRelations);
   }
 
+  // ============================================
+  // ✅ CRITICAL FIX: ALWAYS GENERATE EXACTLY 3 TOPICS
+  // ============================================
   private async generateDailyTopics(userId: string, date: Date) {
-    console.log('[DTR_DEBUG_X7K] --- GENERATE DAILY TOPICS ---');
+    console.log('[GENERATE] --- GENERATE 3 TOPICS ---');
     
     // Get user interests
     const interests = await this.learningRepository.getUserInterests(userId);
-    console.log('[DTR_DEBUG_X7K] User has', interests.length, 'interests');
+    console.log('[GENERATE] User interests:', interests.length);
     
-    // Get completed topic IDs (NEVER show these again!)
+    // Get completed topics
     const completedIds = await this.learningRepository.getCompletedTopicIds(userId);
-    console.log('[DTR_DEBUG_X7K] User has completed', completedIds.length, 'topics (will NEVER show again)');
-    console.log('[DTR_DEBUG_X7K] Completed IDs:', completedIds);
+    console.log('[GENERATE] Completed topics:', completedIds.length);
 
     let selectedTopics: TopicWithCategory[] = [];
 
+    // Step 1: Try to get topics from interests (excluding completed)
     if (interests.length > 0) {
-      console.log('[DTR_DEBUG_X7K] Selecting from user interests...');
-      
       const categoryIds = interests.map(i => i.categoryId);
       const candidateTopics = await this.learningRepository.getRandomTopicsByCategories(
         categoryIds,
-        20 // Get more candidates
+        20
       );
-      console.log('[DTR_DEBUG_X7K] Found', candidateTopics.length, 'topics from interested categories');
-
-      // Filter out completed topics (NEVER REPEAT!)
-      const availableTopics = candidateTopics.filter(
+      
+      const availableFromInterests = candidateTopics.filter(
         (t: Topic) => !completedIds.includes(t.id)
       );
-      console.log('[DTR_DEBUG_X7K] After filtering completed:', availableTopics.length, 'available');
+      
+      selectedTopics = availableFromInterests.slice(0, 3);
+      console.log('[GENERATE] Selected from interests:', selectedTopics.length);
+    }
 
-      selectedTopics = availableTopics.slice(0, 3);
-      console.log('[DTR_DEBUG_X7K] Selected', selectedTopics.length, 'from interests');
-
-      // If not enough, fill with random topics
-      if (selectedTopics.length < 3) {
-        console.log('[DTR_DEBUG_X7K] Need more topics, fetching random...');
-        
-        const needed = 3 - selectedTopics.length;
-        const randomTopics = await this.learningRepository.getRandomTopics(20);
-        
-        const filteredRandom = randomTopics.filter(
-          (t: Topic) => !completedIds.includes(t.id) && 
-               !selectedTopics.some((st: Topic) => st.id === t.id)
-        );
-        console.log('[DTR_DEBUG_X7K] Found', filteredRandom.length, 'additional random topics');
-        
-        selectedTopics = [...selectedTopics, ...filteredRandom.slice(0, needed)];
-      }
-    } else {
-      console.log('[DTR_DEBUG_X7K] No interests set, selecting random topics...');
+    // Step 2: If not enough, get random topics (excluding completed)
+    if (selectedTopics.length < 3) {
+      console.log('[GENERATE] Need more topics. Fetching random...');
       
       const randomTopics = await this.learningRepository.getRandomTopics(20);
-      console.log('[DTR_DEBUG_X7K] Found', randomTopics.length, 'random topics');
-      
-      const availableTopics = randomTopics.filter(
-        (t: Topic) => !completedIds.includes(t.id)
+      const availableRandom = randomTopics.filter(
+        (t: Topic) => !completedIds.includes(t.id) && 
+             !selectedTopics.some((st: Topic) => st.id === t.id)
       );
-      console.log('[DTR_DEBUG_X7K] After filtering completed:', availableTopics.length, 'available');
       
-      selectedTopics = availableTopics.slice(0, 3);
+      const needed = 3 - selectedTopics.length;
+      selectedTopics = [...selectedTopics, ...availableRandom.slice(0, needed)];
+      console.log('[GENERATE] After random topics:', selectedTopics.length);
     }
 
-    console.log('[DTR_DEBUG_X7K] FINAL SELECTION:', selectedTopics.length, 'topics');
-    
-    // Check if we have enough topics
-    if (selectedTopics.length === 0) {
-      console.log('[DTR_DEBUG_X7K] ⚠️ NO TOPICS AVAILABLE!');
-      // Create empty set to mark the day as processed
-      return await this.learningRepository.createDailyTopicSet(userId, date, []);
-    }
-
+    // ✅ Step 3: CRITICAL FIX - If still not enough, allow repeating completed topics
     if (selectedTopics.length < 3) {
-      console.log('[DTR_DEBUG_X7K] ⚠️ WARNING: Only', selectedTopics.length, 'topics available (need 3)');
-      console.log('[DTR_DEBUG_X7K] User may have completed most topics. Need to add more topics to database!');
+      console.log('[GENERATE] ⚠️ Still need more! Allowing completed topics to repeat...');
+      
+      const allTopics = await this.learningRepository.getRandomTopics(20);
+      const additionalTopics = allTopics.filter(
+        (t: Topic) => !selectedTopics.some((st: Topic) => st.id === t.id)
+      );
+      
+      const needed = 3 - selectedTopics.length;
+      selectedTopics = [...selectedTopics, ...additionalTopics.slice(0, needed)];
+      console.log('[GENERATE] After including completed:', selectedTopics.length);
     }
 
-    const topicIds = selectedTopics.map(t => t.id);
-    console.log('[DTR_DEBUG_X7K] Final topic IDs:', topicIds);
-    console.log('[DTR_DEBUG_X7K] Final topic titles:', selectedTopics.map(t => t.title));
-    console.log('[DTR_DEBUG_X7K] Creating DailyTopicSet...');
-    
-    const result = await this.learningRepository.createDailyTopicSet(userId, date, topicIds);
-    console.log('[DTR_DEBUG_X7K] --- GENERATE DAILY TOPICS END ---');
-    
-    return result;
+    // ✅ Step 4: ABSOLUTE LAST RESORT - If STILL not enough (impossible but safe)
+    if (selectedTopics.length < 3) {
+      console.error('[GENERATE] ❌ CRITICAL: Not enough topics in database!');
+      console.error('[GENERATE] Database only has', selectedTopics.length, 'topics total');
+      throw new Error('Not enough topics in database. Please add more topics.');
+    }
+
+    // ✅ GUARANTEE: We now have exactly 3 topics
+    const topicIds = selectedTopics.slice(0, 3).map(t => t.id);
+    console.log('[GENERATE] ✅ FINAL: Creating set with exactly 3 topics');
+    console.log('[GENERATE] Topic IDs:', topicIds);
+
+    return await this.learningRepository.createDailyTopicSet(userId, date, topicIds);
   }
 
   private formatDailyTopics(dailySet: DailyTopicSetWithRelations) {
@@ -214,15 +187,12 @@ class LearningService {
   // ============================================
   // TOPIC READING
   // ============================================
-
   async getTopicContent(userId: string, topicId: string, difficulty: Difficulty) {
     const topic = await this.learningRepository.getTopicById(topicId);
-
     if (!topic) {
       throw new Error('Topic not found');
     }
 
-    // Get or create progress
     let progress = await this.learningRepository.getUserProgress(userId, topicId);
     
     if (!progress) {
@@ -231,7 +201,6 @@ class LearningService {
 
     const typedProgress = progress as UserProgressWithStatus;
 
-    // Select content based on difficulty
     let content: string;
     switch (difficulty) {
       case Difficulty.SIMPLE:
@@ -268,7 +237,6 @@ class LearningService {
   async markTopicAsRead(userId: string, topicId: string, difficulty?: Difficulty) {
     await this.learningRepository.markTopicAsRead(userId, topicId, difficulty);
 
-    // Update daily topic set progress
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     await this.learningRepository.updateDailyTopicSetProgress(userId, today);
@@ -277,32 +245,26 @@ class LearningService {
   }
 
   // ============================================
-  // QUIZ - SHOWS ONLY 1 QUESTION PER DIFFICULTY
+  // QUIZ
   // ============================================
-
   async getQuiz(userId: string, topicId: string) {
     const progress = await this.learningRepository.getUserProgress(userId, topicId);
-
     if (!progress) {
       throw new Error('You must read the topic first');
     }
 
     const typedProgress = progress as UserProgressWithStatus;
-
     if (!typedProgress.markedAsReadAt) {
       throw new Error('Please mark the topic as read before taking the quiz');
     }
 
     const difficulty = typedProgress.difficultyChosen || Difficulty.MEDIUM;
-    
-    // Get ONLY questions matching the chosen difficulty (1 question)
     const questions = await this.learningRepository.getQuestionsByTopic(topicId, difficulty);
 
     if (questions.length === 0) {
       throw new Error('No questions available for this topic');
     }
 
-    // Return questions without correct answers
     return {
       topicId,
       difficulty,
@@ -321,22 +283,18 @@ class LearningService {
 
   async submitQuiz(userId: string, topicId: string, answers: { questionId: string; selectedOption: string }[]) {
     const progress = await this.learningRepository.getUserProgress(userId, topicId);
-
     if (!progress) {
       throw new Error('Progress not found');
     }
 
     const typedProgress = progress as UserProgressWithStatus;
-
     if (typedProgress.quizCompleted) {
       throw new Error('Quiz already completed for this topic');
     }
 
-    // Get questions matching the chosen difficulty
     const difficulty = typedProgress.difficultyChosen || Difficulty.MEDIUM;
     const questions = await this.learningRepository.getQuestionsByTopic(topicId, difficulty);
 
-    // Grade the quiz
     let correctCount = 0;
     const results = [];
 
@@ -350,7 +308,6 @@ class LearningService {
       const isCorrect = question.correctOption === answer.selectedOption;
       if (isCorrect) correctCount++;
 
-      // Save quiz attempt
       const attemptNumber = await this.learningRepository.getQuizAttemptCount(userId, topicId) + 1;
       await this.learningRepository.createQuizAttempt(
         userId,
@@ -370,14 +327,11 @@ class LearningService {
       });
     }
 
-    // Calculate score
     const score = correctCount;
     const totalQuestions = questions.length;
 
-    // Complete the quiz
     await this.learningRepository.completeTopicQuiz(userId, topicId, score);
 
-    // Update daily topic set progress
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     await this.learningRepository.updateDailyTopicSetProgress(userId, today);
@@ -386,7 +340,7 @@ class LearningService {
       score,
       totalQuestions,
       percentage: Math.round((score / totalQuestions) * 100),
-      passed: score >= Math.ceil(totalQuestions * 0.7), // 70% to pass
+      passed: score >= Math.ceil(totalQuestions * 0.7),
       results
     };
   }
@@ -394,14 +348,12 @@ class LearningService {
   // ============================================
   // USER PROGRESS
   // ============================================
-
   async getUserProgress(userId: string) {
     const stats = await this.learningRepository.getUserStats(userId) as UserStats | null;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dailySet = await this.learningRepository.getDailyTopicSet(userId, today);
-
     const typedDailySet = dailySet as DailyTopicSetWithRelations | null;
 
     return {
